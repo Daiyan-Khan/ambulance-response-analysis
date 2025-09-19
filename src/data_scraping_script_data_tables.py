@@ -62,8 +62,8 @@ def is_valid_data_row(row):
         "cpr", "aed", "hypothermia", "neurological", "category", "initial arrest rhythm", "shockable"
     ]
     banned_fragments = [
-        "survival to", "total n", "rosc", "cpc", "admission", "discharge",
-        "sample ems", "page", "report", "cares", "data definitions"
+        "total n", "cpc",
+        "sample ems", "page", "report", "cares", "data definitions", "witnessed by bystander", "Demographic", "OHCA"
     ]
     footnote_starts = ["inclusion criteria", "*bystander", "april"]
 
@@ -79,6 +79,15 @@ def is_valid_data_row(row):
     return True
 
 
+def normalize_to_two_columns(row):
+    if not row:
+        return ["", ""]
+    category = row[0]
+    value = " ".join(row[1:]) if len(row) > 1 else ""
+    return [category, value]
+
+
+
 # Main
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
 
@@ -92,7 +101,7 @@ with pdfplumber.open(pdf_path) as pdf:
 
         # Pad shorter rows to match column count
         max_cols = len(headers)
-        normalized = [r + [""] * (max_cols - len(r)) for r in raw_rows]
+        normalized = [normalize_to_two_columns(r) for r in raw_rows]
 
         # Filter for actual data rows
         filtered = [r for r in normalized if is_valid_data_row(r)]
@@ -102,4 +111,3 @@ with pdfplumber.open(pdf_path) as pdf:
         output_name = f"page_{page_num + 1}_cleaned_{timestamp}.csv"
         df.to_csv(output_name, index=False)
         print(f"Saved: {output_name}")
-
